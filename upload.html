@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload</title>
+    <!-- Tambah Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+    <script src="firebase.js"></script>
+    <!-- Tambah Cloudinary SDK -->
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            max-width: 100vw;
+            background-color: #1a1a1a;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        nav a {
+            color: #ffcc00;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        nav button {
+            background-color: #ffcc00;
+            color: #000000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        nav button:hover {
+            background-color: #e6b800;
+        }
+        nav .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        nav .nav-center {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+        }
+        nav .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        nav .nav-right .username {
+            color: #ffcc00;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .content-wrapper {
+            margin-top: 80px;
+        }
+        .menu-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .hamburger {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 24px;
+            height: 18px;
+            padding: 5px;
+        }
+        .hamburger div {
+            background-color: #ffcc00;
+            height: 3px;
+            width: 100%;
+            border-radius: 2px;
+        }
+        .project-menu {
+            display: none;
+            background-color: #1a1a1a;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(255, 204, 0, 0.2);
+            max-width: 300px;
+            position: absolute;
+            z-index: 100;
+            margin-top: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .project-menu.active {
+            display: block;
+        }
+        .project-menu .search-container {
+            padding: 10px;
+            border-bottom: 1px solid #333333;
+        }
+        .project-menu .search-container input {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background-color: #333333;
+            color: #ffffff;
+            font-size: 14px;
+        }
+        .project-menu .search-container input::placeholder {
+            color: #cccccc;
+        }
+        .project-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .project-menu li {
+            padding: 10px 15px;
+            border-bottom: 1px solid #333333;
+            cursor: pointer;
+            position: relative;
+        }
+        .project-menu li:last-child {
+            border-bottom: none;
+        }
+        .project-menu li:hover {
+            background-color: #333333;
+        }
+        .project-menu .project-actions {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: #1a1a1a;
+            border: 2px solid #ffcc00;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(255, 204, 0, 0.2);
+            padding: 10px;
+            z-index: 101;
+            box-sizing: border-box;
+        }
+        .project-menu .project-actions.active {
+            display: block;
+        }
+        .project-menu .project-actions button {
+            background-color: #ffcc00;
+            color: #000000;
+            border: none;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+        }
+        .project-menu .project-actions button:hover {
+            background-color: #e6b800;
+        }
+        .project-menu .project-actions button.delete {
+            background-color: #ff3333;
+        }
+        .project-menu .project-actions button.delete:hover {
+            background-color: #cc0000;
+        }
+        .project-menu .no-projects {
+            padding: 10px 15px;
+            color: #ffcc00;
+            text-align: center;
+            font-style: italic;
+        }
+        h1 {
+            text-align: center;
+            color: #ffcc00;
+        }
+        .admin-section {
+            margin: 20px auto;
+            max-width: 500px;
+            background-color: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .admin-section h2 {
+            color: #ffcc00;
+        }
+        .admin-section input, .admin-section select, .admin-section button, .admin-section textarea {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #333333;
+            color: #ffffff;
+        }
+        .admin-section input#projectTitle {
+            text-transform: uppercase;
+        }
+        .admin-section button {
+            background-color: #ffcc00;
+            color: #000000;
+            cursor: pointer;
+        }
+        .admin-section button:hover {
+            background-color: #e6b800;
+        }
+        .login-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .login-section input, .login-section button {
+            padding: 10px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+        }
+        .login-section button {
+            background-color: #ffcc00;
+            color: #000000;
+            cursor: pointer;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #1a1a1a;
+            margin: 10% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+            position: relative;
+        }
+        .modal-content textarea {
+            width: 100%;
+            height: 200px;
+            background-color: #333333;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+        }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #333333;
+            color: #ffffff;
+        }
+        .modal-content button {
+            background-color: #ffcc00;
+            color: #000000;
+            border: none;
+            padding: 10px;
+            margin: 10px 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .modal-content button:hover {
+            background-color: #e6b800;
+        }
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            color: #ffcc00;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .upload-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .upload-photo {
+            flex: 1;
+        }
+        .upload-project-card {
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .upload-project-card button {
+            margin: 0;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        #toolsFields {
+            display: none;
+        }
+        .code-entry {
+            margin: 10px 0;
+            border: 1px solid #333333;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .code-entry button.remove {
+            background-color: #ff3333;
+            margin-top: 5px;
+        }
+        .code-entry button.remove:hover {
+            background-color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-left">
+            <button id="backButton" onclick="goBack()">Back</button>
+        </div>
+        <div class="nav-center">
+            <a href="./index.html">LIQUIDITY FARM</a>
+        </div>
+        <div class="nav-right">
+            <a href="./upload.html" id="loginLink">Login</a>
+            <span class="username" id="username"></span>
+            <a href="#" id="logoutLink" onclick="logoutAdmin()" style="display: none;">Logout</a>
+        </div>
+    </nav>
+    <div class="content-wrapper">
+        <div class="menu-toggle">
+            <div class="hamburger" onclick="toggleProjectMenu()">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+        <div class="project-menu" id="projectMenu">
+            <div class="search-container">
+                <input type="text" id="projectSearch" placeholder="Search projects..." oninput="filterProjects()">
+            </div>
+            <ul id="projectListItems"></ul>
+        </div>
+        <h1 id="pageTitle">Upload</h1>
+
+        <div class="login-section" id="loginSection">
+            <input type="text" id="adminUsername" placeholder="Enter email">
+            <input type="password" id="adminPassword" placeholder="Enter password">
+            <button onclick="loginAdmin()">Login with Email</button>
+            <button onclick="loginWithGoogle()">Login with Google</button>
+        </div>
+
+        <div class="admin-section" id="adminSection" style="display: none;">
+            <h2 id="formTitle">Upload New Project</h2>
+            <div class="upload-section">
+                <div class="upload-photo">
+                    <input type="file" id="projectPhoto" accept="image/*">
+                </div>
+                <div class="upload-project-card">
+                    <button id="tutorialButton" onclick="openTutorialModal()">Write Tutorial</button>
+                </div>
+            </div>
+            <input type="text" id="projectTitle" placeholder="Project Title">
+            <select id="projectType" onchange="toggleFields()">
+                <option value="Retro">Retro</option>
+                <option value="Testnet">Testnet</option>
+                <option value="Garapan">Garapan</option>
+                <option value="Tools">Tools</option>
+            </select>
+            <input type="text" id="projectStart" placeholder="Start (Number)">
+            <input type="text" id="projectEnd" placeholder="End (Symbol)">
+            <select id="projectStatus">
+                <option value="Ongoing">Ongoing</option>
+                <option value="Ended">Ended</option>
+            </select>
+            <button id="submitButton" onclick="submitProject()">Upload Project</button>
+            <div id="toolsFields">
+                <div id="codeEntries"></div>
+                <button onclick="addCodeEntry()">Add Code</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tutorialModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeTutorialModal()">×</span>
+            <h2>Write Tutorial</h2>
+            <input type="text" id="modalTutorialName" placeholder="Tutorial Name (e.g., Google)">
+            <input type="text" id="modalTutorialLink" placeholder="Tutorial Link (e.g., https://google.com)">
+            <textarea id="modalTutorial" placeholder="Write tutorial here..."></textarea>
+            <button onclick="saveTutorial()">Save</button>
+            <button onclick="closeTutorialModal()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="codeModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeCodeModal()">×</span>
+            <h2>Write Code</h2>
+            <input type="text" id="modalCodeName" placeholder="Code Name (e.g., Main HTML)">
+            <select id="modalCodeType">
+                <option value="HTML">HTML</option>
+                <option value="JavaScript">JavaScript</option>
+                <option value="Java">Java</option>
+                <option value="Python">Python</option>
+                <option value="CSS">CSS</option>
+            </select>
+            <textarea id="modalCodeContent" placeholder="Write code here..."></textarea>
+            <button onclick="saveCode()">Save</button>
+            <button onclick="closeCodeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let projects = JSON.parse(localStorage.getItem('projects')) || [];
+        let editIndex = null;
+        let tutorialContent = { name: '', link: '', content: '' };
+        let codes = [];
+        let currentCodeIndex = null;
+
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                localStorage.setItem('adminLoggedIn', 'true');
+                localStorage.setItem('username', user.displayName || user.email.split('@')[0]);
+                document.getElementById('adminSection').style.display = 'block';
+                document.getElementById('loginSection').style.display = 'none';
+                displayProjectList();
+                toggleFields();
+                updateAuthLinks();
+            } else {
+                localStorage.removeItem('adminLoggedIn');
+                localStorage.removeItem('username');
+                document.getElementById('adminSection').style.display = 'none';
+                document.getElementById('loginSection').style.display = 'block';
+                updateAuthLinks();
+            }
+        });
+
+        function goBack() {
+            sessionStorage.setItem('hasGoneBack', 'true');
+            window.history.back();
+        }
+
+        function toggleProjectMenu() {
+            const menu = document.getElementById('projectMenu');
+            menu.classList.toggle('active');
+            if (menu.classList.contains('active')) {
+                document.getElementById('projectSearch').value = '';
+                filterProjects();
+                closeAllSubMenus();
+            }
+        }
+
+        function updateAuthLinks() {
+            firebase.auth().onAuthStateChanged((user) => {
+                const isLoggedIn = !!user;
+                const username = user ? (user.displayName || user.email.split('@')[0]) : '';
+                localStorage.setItem('adminLoggedIn', isLoggedIn.toString());
+                localStorage.setItem('username', username);
+                document.getElementById('loginLink').style.display = isLoggedIn ? 'none' : 'inline';
+                document.getElementById('logoutLink').style.display = isLoggedIn ? 'inline' : 'none';
+                document.getElementById('loginSection').style.display = isLoggedIn ? 'none' : 'block';
+                document.getElementById('username').textContent = isLoggedIn ? username : '';
+                if (isLoggedIn) {
+                    displayProjectList();
+                }
+            });
+        }
+
+        function logoutAdmin() {
+            firebase.auth().signOut().then(() => {
+                localStorage.removeItem('adminLoggedIn');
+                localStorage.removeItem('username');
+                document.getElementById('adminSection').style.display = 'none';
+                document.getElementById('projectMenu').classList.remove('active');
+                updateAuthLinks();
+            }).catch((error) => {
+                console.error('Logout error:', error);
+                alert('Failed to logout!');
+            });
+        }
+
+        function loginAdmin() {
+            const email = document.getElementById('adminUsername').value;
+            const password = document.getElementById('adminPassword').value;
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Login berhasil, state listener akan handle sisanya
+                })
+                .catch((error) => {
+                    console.error('Login error:', error);
+                    alert('Incorrect email or password!');
+                });
+        }
+
+        function loginWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider)
+                .then((result) => {
+                    // Login berhasil, state listener akan handle sisanya
+                })
+                .catch((error) => {
+                    console.error('Google login error:', error);
+                    alert('Failed to login with Google!');
+                });
+        }
+
+        function closeAllSubMenus() {
+            const subMenus = document.querySelectorAll('.project-actions');
+            subMenus.forEach(menu => menu.classList.remove('active'));
+        }
+
+        function showProjectActions(li) {
+            console.log('Showing actions for:', li.textContent.trim());
+            closeAllSubMenus();
+            const subMenu = li.querySelector('.project-actions');
+            if (subMenu) {
+                subMenu.classList.add('active');
+            }
+        }
+
+        function filterProjects() {
+            const searchQuery = document.getElementById('projectSearch').value.toLowerCase();
+            const projectListItems = document.getElementById('projectListItems');
+            projectListItems.innerHTML = '';
+
+            const filteredProjects = projects.filter(project => 
+                project.title.toLowerCase().includes(searchQuery)
+            );
+
+            if (filteredProjects.length === 0) {
+                const li = document.createElement('li');
+                li.className = 'no-projects';
+                li.textContent = 'No projects available';
+                projectListItems.appendChild(li);
+            } else {
+                filteredProjects.forEach((project, index) => {
+                    const originalIndex = projects.findIndex(p => p.title === project.title);
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        ${project.title}
+                        <div class="project-actions">
+                            <button onclick="editProject(${originalIndex})">Edit</button>
+                            <button class="delete" onclick="deleteProject(${originalIndex})">Delete</button>
+                        </div>
+                    `;
+                    li.addEventListener('click', () => {
+                        console.log('Clicked project:', project.title);
+                        showProjectActions(li);
+                    });
+                    projectListItems.appendChild(li);
+                });
+            }
+        }
+
+        function displayProjectList() {
+            filterProjects();
+        }
+
+        function toggleFields() {
+            const projectType = document.getElementById('projectType').value;
+            document.getElementById('tutorialButton').style.display = projectType === 'Tools' ? 'none' : 'block';
+            document.getElementById('toolsFields').style.display = projectType === 'Tools' ? 'block' : 'none';
+            if (projectType === 'Tools') {
+                renderCodeEntries();
+            } else {
+                document.getElementById('codeEntries').innerHTML = '';
+            }
+        }
+
+        function renderCodeEntries() {
+            const codeEntries = document.getElementById('codeEntries');
+            codeEntries.innerHTML = '';
+            codes.forEach((code, index) => {
+                const entry = document.createElement('div');
+                entry.className = 'code-entry';
+                entry.innerHTML = `
+                    <p>Code ${index + 1}: ${code.name || 'Unnamed'} (${code.type})</p>
+                    <button onclick="editCodeEntry(${index})">Edit</button>
+                    <button class="remove" onclick="removeCodeEntry(${index})">Remove</button>
+                `;
+                codeEntries.appendChild(entry);
+            });
+        }
+
+        function addCodeEntry() {
+            codes.push({ name: '', content: '', type: 'HTML' });
+            renderCodeEntries();
+        }
+
+        function editCodeEntry(index) {
+            currentCodeIndex = index;
+            const modal = document.getElementById('codeModal');
+            const modalCodeName = document.getElementById('modalCodeName');
+            const modalCodeContent = document.getElementById('modalCodeContent');
+            const modalCodeType = document.getElementById('modalCodeType');
+            modalCodeName.value = codes[index].name;
+            modalCodeContent.value = codes[index].content;
+            modalCodeType.value = codes[index].type;
+            modal.style.display = 'block';
+        }
+
+        function removeCodeEntry(index) {
+            codes.splice(index, 1);
+            renderCodeEntries();
+        }
+
+        if (localStorage.getItem('adminLoggedIn') === 'true') {
+            document.getElementById('adminSection').style.display = 'block';
+            displayProjectList();
+            toggleFields();
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('edit')) {
+            editIndex = parseInt(params.get('edit'));
+            if (editIndex >= 0 && editIndex < projects.length) {
+                const project = projects[editIndex];
+                document.getElementById('pageTitle').textContent = 'Edit';
+                document.getElementById('formTitle').textContent = 'Edit Project';
+                document.getElementById('submitButton').textContent = 'Save Changes';
+                document.getElementById('projectTitle').value = project.title;
+                document.getElementById('projectType').value = project.type;
+                document.getElementById('projectStart').value = project.start;
+                document.getElementById('projectEnd').value = project.end;
+                document.getElementById('projectStatus').value = project.status;
+                if (project.type === 'Tools') {
+                    codes = project.codes || [];
+                    if (project.code1) codes.push({ name: 'Code 1', content: project.code1, type: project.code1Type || 'HTML' });
+                    if (project.code2) codes.push({ name: 'Code 2', content: project.code2, type: project.code2Type || 'HTML' });
+                } else {
+                    tutorialContent = project.tutorial || { name: '', link: '', content: '' };
+                }
+                toggleFields();
+            }
+        }
+
+        function editProject(index) {
+            console.log('Editing project at index:', index);
+            window.location.href = `./upload.html?edit=${index}`;
+        }
+
+        function deleteProject(index) {
+            console.log('Deleting project at index:', index);
+            if (confirm(`Are you sure you want to delete the project "${projects[index].title}"?`)) {
+                projects.splice(index, 1);
+                localStorage.setItem('projects', JSON.stringify(projects));
+                displayProjectList();
+            }
+        }
+
+        function openTutorialModal() {
+            const modal = document.getElementById('tutorialModal');
+            const modalTutorial = document.getElementById('modalTutorial');
+            const modalTutorialName = document.getElementById('modalTutorialName');
+            const modalTutorialLink = document.getElementById('modalTutorialLink');
+            modalTutorial.value = tutorialContent.content;
+            modalTutorialName.value = tutorialContent.name;
+            modalTutorialLink.value = tutorialContent.link;
+            modal.style.display = 'block';
+        }
+
+        function closeTutorialModal() {
+            document.getElementById('tutorialModal').style.display = 'none';
+        }
+
+        function saveTutorial() {
+            tutorialContent = {
+                name: document.getElementById('modalTutorialName').value.trim(),
+                link: document.getElementById('modalTutorialLink').value.trim(),
+                content: document.getElementById('modalTutorial').value.trim()
+            };
+            console.log('Saved tutorial:', tutorialContent);
+            closeTutorialModal();
+        }
+
+        function openCodeModal() {
+            const modal = document.getElementById('codeModal');
+            const modalCodeName = document.getElementById('modalCodeName');
+            const modalCodeContent = document.getElementById('modalCodeContent');
+            const modalCodeType = document.getElementById('modalCodeType');
+            if (currentCodeIndex !== null) {
+                modalCodeName.value = codes[currentCodeIndex].name;
+                modalCodeContent.value = codes[currentCodeIndex].content;
+                modalCodeType.value = codes[currentCodeIndex].type;
+            } else {
+                modalCodeName.value = '';
+                modalCodeContent.value = '';
+                modalCodeType.value = 'HTML';
+            }
+            modal.style.display = 'block';
+        }
+
+        function closeCodeModal() {
+            document.getElementById('codeModal').style.display = 'none';
+            currentCodeIndex = null;
+        }
+
+        function saveCode() {
+            const name = document.getElementById('modalCodeName').value;
+            const content = document.getElementById('modalCodeContent').value;
+            const type = document.getElementById('modalCodeType').value;
+            if (currentCodeIndex !== null) {
+                codes[currentCodeIndex] = { name, content, type };
+            } else {
+                codes.push({ name, content, type });
+            }
+            renderCodeEntries();
+            closeCodeModal();
+        }
+
+        function submitProject() {
+            const photo = document.getElementById('projectPhoto').files[0];
+            let title = document.getElementById('projectTitle').value.toUpperCase();
+            const type = document.getElementById('projectType').value || 'Retro';
+            const start = document.getElementById('projectStart').value || 'N/A';
+            const end = document.getElementById('projectEnd').value || 'N/A';
+            const status = document.getElementById('projectStatus').value || 'Ongoing';
+            const username = localStorage.getItem('username') || 'Unknown';
+
+            if (type === 'Tools' && codes.length === 0) {
+                alert('Please add at least one code for Tools project!');
+                return;
+            }
+
+            const saveProject = (photoURL) => {
+                const project = {
+                    photoURL: photoURL || '',
+                    title: title || 'Untitled',
+                    type,
+                    start,
+                    end,
+                    status,
+                    uploadDate: new Date().toISOString(),
+                    pinned: editIndex !== null ? projects[editIndex].pinned || false : false,
+                    uploader: username
+                };
+
+                if (type === 'Tools') {
+                    project.codes = codes;
+                } else {
+                    project.tutorial = { ...tutorialContent };
+                }
+
+                if (editIndex !== null) {
+                    projects[editIndex] = project;
+                } else {
+                    projects.push(project);
+                }
+
+                localStorage.setItem('projects', JSON.stringify(projects));
+                displayProjectList();
+
+                document.getElementById('projectPhoto').value = '';
+                document.getElementById('projectTitle').value = '';
+                document.getElementById('projectType').value = 'Retro';
+                document.getElementById('projectStart').value = '';
+                document.getElementById('projectEnd').value = '';
+                document.getElementById('projectStatus').value = 'Ongoing';
+                tutorialContent = { name: '', link: '', content: '' };
+                codes = [];
+                editIndex = null;
+                document.getElementById('pageTitle').textContent = 'Upload';
+                document.getElementById('formTitle').textContent = 'Upload New Project';
+                document.getElementById('submitButton').textContent = 'Upload Project';
+                toggleFields();
+
+                alert(editIndex !== null ? 'Project successfully edited!' : 'Project successfully uploaded!');
+                window.location.href = './index.html';
+            };
+
+            if (photo) {
+                const formData = new FormData();
+                formData.append('file', photo);
+                formData.append('upload_preset', 'liquidityfarm'); // Ganti dengan preset kamu, misalnya 'liquidity_unsigned'
+                formData.append('cloud_name', 'dwcoic3k9'); // Ganti dengan Cloud Name kamu, misalnya 'mycloudname'
+
+                fetch(`https://api.cloudinary.com/v1_1/dwcoic3k9/image/upload`, {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.secure_url) {
+                            saveProject(data.secure_url);
+                        } else {
+                            alert('Failed to upload image to Cloudinary!');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Upload error:', error);
+                        alert('Failed to upload image!');
+                    });
+            } else {
+                const photoURL = editIndex !== null ? projects[editIndex].photoURL : '';
+                saveProject(photoURL);
+            }
+        }
+    </script>
+</body>
+</html>

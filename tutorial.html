@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial</title>
+    <!-- Tambah Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+    <script src="firebase.js"></script>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            max-width: 100vw;
+            background-color: #1a1a1a;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+        nav a {
+            color: #ffcc00;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        nav button {
+            background-color: #ffcc00;
+            color: #000000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        nav button:hover {
+            background-color: #e6b800;
+        }
+        nav .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        nav .nav-center {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+        }
+        nav .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        nav .nav-right .username {
+            color: #ffcc00;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .content {
+            margin-top: 80px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        h1 {
+            color: #ffcc00;
+            text-align: center;
+        }
+        .tutorial-content {
+            background-color: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .tutorial-content h2 {
+            color: #ffcc00;
+            margin-top: 0;
+        }
+        .tutorial-content p {
+            line-height: 1.6;
+            margin: 10px 0;
+        }
+        .tutorial-content a.lets-go {
+            color: #0000EE;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .tutorial-content a.lets-go:hover {
+            text-decoration: underline;
+        }
+        .tutorial-content a.lets-go:visited {
+            color: #800080;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-left">
+            <button id="backButton" onclick="goBack()">Back</button>
+        </div>
+        <div class="nav-center">
+            <a href="./index.html">LIQUIDITY FARM</a>
+        </div>
+        <div class="nav-right">
+            <a href="./upload.html" id="loginLink">Login</a>
+            <span class="username" id="username"></span>
+            <a href="#" id="logoutLink" onclick="logoutAdmin()" style="display: none;">Logout</a>
+        </div>
+    </nav>
+    <div class="content">
+        <h1>Tutorial</h1>
+        <div class="tutorial-content" id="tutorialContent">
+            <p>No tutorial available for this project.</p>
+        </div>
+    </div>
+
+    <script>
+        let projects = JSON.parse(localStorage.getItem('projects')) || [];
+
+        updateAuthLinks();
+
+        function goBack() {
+            sessionStorage.setItem('hasGoneBack', 'true');
+            window.history.back();
+        }
+
+        function updateAuthLinks() {
+            firebase.auth().onAuthStateChanged((user) => {
+                const isLoggedIn = !!user;
+                const username = user ? (user.displayName || user.email.split('@')[0]) : '';
+                localStorage.setItem('adminLoggedIn', isLoggedIn.toString());
+                localStorage.setItem('username', username);
+                document.getElementById('loginLink').style.display = isLoggedIn ? 'none' : 'inline';
+                document.getElementById('logoutLink').style.display = isLoggedIn ? 'inline' : 'none';
+                document.getElementById('username').textContent = isLoggedIn ? username : '';
+            });
+        }
+
+        function logoutAdmin() {
+            firebase.auth().signOut().then(() => {
+                localStorage.removeItem('adminLoggedIn');
+                localStorage.removeItem('username');
+                updateAuthLinks();
+                window.location.href = './upload.html';
+            }).catch((error) => {
+                console.error('Logout error:', error);
+                alert('Failed to logout!');
+            });
+        }
+
+        function displayTutorial() {
+            const params = new URLSearchParams(window.location.search);
+            const projectTitle = params.get('title');
+            const tutorialContent = document.getElementById('tutorialContent');
+            const project = projects.find(p => p.title === projectTitle);
+
+            if (project && project.tutorial && (project.tutorial.name || project.tutorial.link || project.tutorial.content)) {
+                let html = '';
+                if (project.tutorial.name) {
+                    html += `<h2>${project.tutorial.name}</h2>`;
+                } else {
+                    html += `<h2>Tutorial</h2>`;
+                }
+                if (project.tutorial.content) {
+                    html += `<p>${project.tutorial.content.replace(/\n/g, '<br>')}</p>`;
+                }
+                if (project.tutorial.link) {
+                    html += `<a href="${project.tutorial.link}" class="lets-go" target="_blank">Lets Go</a>`;
+                }
+                tutorialContent.innerHTML = html;
+            } else {
+                tutorialContent.innerHTML = `<p>No tutorial available for this project.</p>`;
+            }
+            console.log('Displayed tutorial for:', projectTitle, project?.tutorial);
+        }
+
+        displayTutorial();
+    </script>
+</body>
+</html>

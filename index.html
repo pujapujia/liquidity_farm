@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIQUIDITY FARM</title>
+    <!-- Tambah Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+    <script src="firebase.js"></script>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            max-width: 100vw;
+            background-color: #1a1a1a;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .nav-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 2px;
+            background-color: #ffcc00;
+            animation: slide 3s infinite linear;
+        }
+        @keyframes slide {
+            0% {
+                width: 0;
+                left: 0;
+            }
+            50% {
+                width: 100%;
+                left: 0;
+            }
+            100% {
+                width: 0;
+                left: 100%;
+            }
+        }
+        nav button {
+            background-color: #ffcc00;
+            color: #000000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 5px;
+        }
+        nav button:hover {
+            background-color: #e6b800;
+        }
+        nav .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        nav .nav-right a {
+            color: #ffcc00;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        nav .nav-right a:hover {
+            text-decoration: underline;
+        }
+        nav .nav-right .username {
+            color: #ffcc00;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        nav .nav-center {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+        }
+        nav .nav-center input {
+            padding: 8px;
+            width: 200px;
+            border: none;
+            border-radius: 5px;
+            background-color: #333333;
+            color: #ffffff;
+            font-size: 14px;
+        }
+        nav .nav-center input::placeholder {
+            color: #cccccc;
+        }
+        h1 {
+            text-align: center;
+            color: #ffcc00;
+            margin-top: 80px;
+        }
+        .filter-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .filter-section select {
+            padding: 10px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #333333;
+            color: #ffffff;
+        }
+        .project-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .project-card {
+            background-color: #1a1a1a;
+            width: 250px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(255, 204, 0, 0.2);
+            overflow: hidden;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid #ffcc00;
+        }
+        .uploader-name {
+            color: #ffcc00;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        .days-label {
+            color: #ffffff;
+            font-size: 12px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .category-label {
+            color: #ffcc00;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .project-image {
+            flex: 0 0 150px;
+            max-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+        .project-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            cursor: pointer;
+        }
+        .project-content {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .project-content h3 {
+            color: #ffffff;
+            margin: 5px 0;
+            font-size: 18px;
+        }
+        .project-content p {
+            color: #ffffff;
+            font-size: 14px;
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+        .project-content .status-ongoing {
+            color: #00ff00;
+        }
+        .project-content .status-ended {
+            color: #ff0000;
+        }
+        .project-content a {
+            color: #ffcc00;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        .project-content a:hover {
+            text-decoration: underline;
+        }
+        .project-content .tutorial-button {
+            background-color: #ffcc00;
+            color: #000000;
+            border: none;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px 0;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .project-content .tutorial-button:hover {
+            background-color: #e6b800;
+        }
+        .project-content .pin-button {
+            background-color: #666666;
+            color: #ffffff;
+            border: none;
+            padding: 6px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 5px auto;
+        }
+        .project-content .pin-button.pinned {
+            background-color: #ffcc00;
+            color: #000000;
+        }
+        .project-content .pin-button:hover {
+            background-color: #e6b800;
+        }
+        .fallback-text {
+            color: #ffcc00;
+            font-size: 14px;
+            margin: 0;
+        }
+        .start-end-label {
+            font-size: 8px;
+            color: #ffcc00;
+            margin: 5px 0;
+        }
+        .edit-button {
+            display: none;
+            background-color: #ffcc00;
+            color: #000000;
+            border: none;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px auto;
+        }
+        .edit-button:hover {
+            background-color: #e6b800;
+        }
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+        .image-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #ffcc00;
+            font-size: 30px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-left">
+            <button id="backButton" onclick="goBack()">Back</button>
+        </div>
+        <div class="nav-center">
+            <input type="text" id="searchInput" placeholder="Search projects..." oninput="filterProjects()">
+        </div>
+        <div class="nav-right">
+            <button onclick="window.location.href='./upload.html'">Upload</button>
+            <a href="./upload.html" id="loginLink">Login</a>
+            <span class="username" id="username"></span>
+            <a href="#" id="logoutLink" onclick="logoutAdmin()" style="display: none;">Logout</a>
+        </div>
+        <div class="nav-line"></div>
+    </nav>
+    <h1>LIQUIDITY FARM</h1>
+
+    <div class="filter-section">
+        <select id="categoryFilter" onchange="filterProjects()">
+            <option value="all">All Categories</option>
+            <option value="Retro">Retro</option>
+            <option value="Testnet">Testnet</option>
+            <option value="Garapan">Garapan</option>
+            <option value="Tools">Tools</option>
+        </select>
+        <select id="statusFilter" onchange="filterProjects()">
+            <option value="all">All Statuses</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="ended">Ended</option>
+        </select>
+    </div>
+
+    <div class="project-container" id="projectContainer"></div>
+
+    <div id="imageModal" class="image-modal">
+        <span class="image-modal-close" onclick="closeImageModal()">×</span>
+        <img id="modalImage" class="image-modal-content" src="" alt="Project Image">
+    </div>
+
+    <script>
+        let projects = JSON.parse(localStorage.getItem('projects')) || [];
+        const isAdmin = localStorage.getItem('adminLoggedIn') === 'true';
+
+        updateAuthLinks();
+
+        function goBack() {
+            sessionStorage.setItem('hasGoneBack', 'true');
+            window.history.back();
+        }
+
+        function updateAuthLinks() {
+            firebase.auth().onAuthStateChanged((user) => {
+                const isLoggedIn = !!user;
+                const username = user ? (user.displayName || user.email.split('@')[0]) : '';
+                localStorage.setItem('adminLoggedIn', isLoggedIn.toString());
+                localStorage.setItem('username', username);
+                document.getElementById('loginLink').style.display = isLoggedIn ? 'none' : 'inline';
+                document.getElementById('logoutLink').style.display = isLoggedIn ? 'inline' : 'none';
+                document.getElementById('username').textContent = isLoggedIn ? username : '';
+            });
+        }
+
+        function logoutAdmin() {
+            firebase.auth().signOut().then(() => {
+                localStorage.removeItem('adminLoggedIn');
+                localStorage.removeItem('username');
+                updateAuthLinks();
+                window.location.href = './upload.html';
+            }).catch((error) => {
+                console.error('Logout error:', error);
+                alert('Failed to logout!');
+            });
+        }
+
+        function calculateDaysSinceUpload(uploadDate) {
+            const upload = new Date(uploadDate);
+            const today = new Date();
+            const diffTime = Math.abs(today - upload);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+        function togglePin(index) {
+            projects[index].pinned = !projects[index].pinned;
+            localStorage.setItem('projects', JSON.stringify(projects));
+            filterProjects();
+        }
+
+        function openImageModal(src) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = src;
+            modal.style.display = 'flex';
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+        }
+
+        function filterProjects() {
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            const projectContainer = document.getElementById('projectContainer');
+            projectContainer.innerHTML = '';
+
+            const pinnedProjects = projects.filter(p => p.pinned);
+            const nonPinnedProjects = projects.filter(p => !p.pinned);
+            const reversedNonPinned = [...nonPinnedProjects].reverse();
+            const sortedProjects = [...pinnedProjects, ...reversedNonPinned];
+
+            sortedProjects.forEach((project, displayIndex) => {
+                const categoryMatch = categoryFilter === 'all' || project.type === categoryFilter;
+                const statusMatch = statusFilter === 'all' || 
+                    (statusFilter === 'ongoing' && project.status === 'Ongoing') ||
+                    (statusFilter === 'ended' && project.status === 'Ended');
+                const searchMatch = project.title.toLowerCase().includes(searchQuery);
+
+                if (categoryMatch && statusMatch && searchMatch) {
+                    const originalIndex = projects.findIndex(p => p.title === project.title);
+                    const projectCard = document.createElement('div');
+                    projectCard.className = 'project-card';
+                    const imageSrc = project.photoURL || '';
+                    const daysSinceUpload = calculateDaysSinceUpload(project.uploadDate);
+                    const linkPage = project.type === 'Tools' ? 'tools.html' : 'tutorial.html';
+                    projectCard.innerHTML = `
+                        <div class="card-header">
+                            <span class="uploader-name">${project.uploader || 'Unknown'}</span>
+                            <span class="days-label">${daysSinceUpload} days</span>
+                            <span class="category-label">${project.type}</span>
+                        </div>
+                        <div class="project-image">
+                            ${imageSrc ? `<img src="${imageSrc}" alt="${project.title}" onclick="openImageModal('${imageSrc}')">` : `<p class="fallback-text">Image not available</p>`}
+                        </div>
+                        <div class="project-content">
+                            <h3>${project.title}</h3>
+                            <p class="${project.status === 'Ongoing' ? 'status-ongoing' : 'status-ended'}">${project.status}</p>
+                            <a href="./${linkPage}?title=${encodeURIComponent(project.title)}" class="tutorial-button">${project.type === 'Tools' ? 'Tools' : 'Tutorial'}</a>
+                            <p class="start-end-label">${project.start} | ${project.end}</p>
+                            ${isAdmin ? `
+                                <button class="edit-button" onclick="editProject(${originalIndex})">Edit</button>
+                                <button class="pin-button ${project.pinned ? 'pinned' : ''}" onclick="togglePin(${originalIndex})">
+                                    ${project.pinned ? 'Unpin' : 'Pin'}
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                    projectContainer.appendChild(projectCard);
+                }
+            });
+        }
+
+        function editProject(index) {
+            window.location.href = `./upload.html?edit=${index}`;
+        }
+
+        filterProjects();
+    </script>
+</body>
+</html>
