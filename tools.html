@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tools</title>
-    <!-- Tambah Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+    <!-- Firebase Compatibility SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="firebase.js"></script>
     <style>
         body {
@@ -142,6 +142,11 @@
     </div>
 
     <script>
+        if (typeof firebase === 'undefined') {
+            console.error('Firebase SDK not loaded.');
+            alert('Firebase failed to load. Please check your internet or CDN.');
+        }
+
         function goBack() {
             sessionStorage.setItem('hasGoneBack', 'true');
             window.history.back();

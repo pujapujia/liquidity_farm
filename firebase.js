@@ -1,5 +1,4 @@
 // firebase.js
-// Ganti dengan Firebase Config kamu dari Firebase Console
 const firebaseConfig = {
     apiKey: "AIzaSyDUGk4PBFp2WS6gsMCkFcCUMmEQIWL-cYs",
     authDomain: "webfarm-bdc35.firebaseapp.com",
@@ -8,7 +7,7 @@ const firebaseConfig = {
     messagingSenderId: "171163595158",
     appId: "1:171163595158:web:52b28d744349f36cd06db7",
     measurementId: "G-3VG524T04J"
-  }
+  };
   
   // Inisialisasi Firebase
   firebase.initializeApp(firebaseConfig);

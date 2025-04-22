@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload</title>
-    <!-- Tambah Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+    <!-- Firebase Compatibility SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="firebase.js"></script>
-    <!-- Tambah Cloudinary SDK -->
+    <!-- Cloudinary SDK -->
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <style>
         body {
@@ -435,6 +435,11 @@
     </div>
 
     <script>
+        if (typeof firebase === 'undefined') {
+            console.error('Firebase SDK not loaded.');
+            alert('Firebase failed to load. Please check your internet or CDN.');
+        }
+
         let projects = JSON.parse(localStorage.getItem('projects')) || [];
         let editIndex = null;
         let tutorialContent = { name: '', link: '', content: '' };
@@ -795,8 +800,8 @@
             if (photo) {
                 const formData = new FormData();
                 formData.append('file', photo);
-                formData.append('upload_preset', 'liquidityfarm'); // Ganti dengan preset kamu, misalnya 'liquidity_unsigned'
-                formData.append('cloud_name', 'dwcoic3k9'); // Ganti dengan Cloud Name kamu, misalnya 'mycloudname'
+                formData.append('upload_preset', 'liquidityfarm');
+                formData.append('cloud_name', 'dwcoic3k9');
 
                 fetch(`https://api.cloudinary.com/v1_1/dwcoic3k9/image/upload`, {
                     method: 'POST',

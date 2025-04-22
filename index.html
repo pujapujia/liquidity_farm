@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LIQUIDITY FARM</title>
-    <!-- Tambah Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+    <!-- Firebase Compatibility SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="firebase.js"></script>
     <style>
         body {
@@ -40,18 +40,9 @@
             animation: slide 3s infinite linear;
         }
         @keyframes slide {
-            0% {
-                width: 0;
-                left: 0;
-            }
-            50% {
-                width: 100%;
-                left: 0;
-            }
-            100% {
-                width: 0;
-                left: 100%;
-            }
+            0% { width: 0; left: 0; }
+            50% { width: 100%; left: 0; }
+            100% { width: 0; left: 100%; }
         }
         nav button {
             background-color: #ffcc00;
@@ -338,6 +329,11 @@
     </div>
 
     <script>
+        if (typeof firebase === 'undefined') {
+            console.error('Firebase SDK not loaded.');
+            alert('Firebase failed to load. Please check your internet or CDN.');
+        }
+
         let projects = JSON.parse(localStorage.getItem('projects')) || [];
         const isAdmin = localStorage.getItem('adminLoggedIn') === 'true';
 
