@@ -334,42 +334,38 @@
             console.error('Firebase SDK not loaded.');
             alert('Firebase failed to load. Please check your internet or CDN.');
         }
-
+    
         let projects = [];
-        const isAdmin = localStorage.getItem('adminLoggedIn') === 'true';
-
-        updateAuthLinks();
-        loadProjects();
-
+        let currentUser = null;
+    
+        firebase.auth().onAuthStateChanged((user) => {
+            currentUser = user;
+            const isLoggedIn = !!user;
+            const username = user ? (user.displayName || user.email.split('@')[0]) : '';
+            localStorage.setItem('adminLoggedIn', isLoggedIn.toString());
+            localStorage.setItem('username', username);
+            document.getElementById('loginLink').style.display = isLoggedIn ? 'none' : 'inline';
+            document.getElementById('logoutLink').style.display = isLoggedIn ? 'inline' : 'none';
+            document.getElementById('username').textContent = isLoggedIn ? username : '';
+            loadProjects();
+        });
+    
         function goBack() {
             sessionStorage.setItem('hasGoneBack', 'true');
             window.history.back();
         }
-
-        function updateAuthLinks() {
-            firebase.auth().onAuthStateChanged((user) => {
-                const isLoggedIn = !!user;
-                const username = user ? (user.displayName || user.email.split('@')[0]) : '';
-                localStorage.setItem('adminLoggedIn', isLoggedIn.toString());
-                localStorage.setItem('username', username);
-                document.getElementById('loginLink').style.display = isLoggedIn ? 'none' : 'inline';
-                document.getElementById('logoutLink').style.display = isLoggedIn ? 'inline' : 'none';
-                document.getElementById('username').textContent = isLoggedIn ? username : '';
-            });
-        }
-
+    
         function logoutAdmin() {
             firebase.auth().signOut().then(() => {
                 localStorage.removeItem('adminLoggedIn');
                 localStorage.removeItem('username');
-                updateAuthLinks();
                 window.location.href = './upload.html';
             }).catch((error) => {
                 console.error('Logout error:', error);
                 alert('Failed to logout!');
             });
         }
-
+    
         function calculateDaysSinceUpload(uploadDate) {
             const upload = new Date(uploadDate);
             const today = new Date();
@@ -377,7 +373,7 @@
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             return diffDays;
         }
-
+    
         function togglePin(index, docId) {
             const project = projects[index];
             project.pinned = !project.pinned;
@@ -390,19 +386,19 @@
                 alert('Failed to update pin status!');
             });
         }
-
+    
         function openImageModal(src) {
             const modal = document.getElementById('imageModal');
             const modalImage = document.getElementById('modalImage');
             modalImage.src = src;
             modal.style.display = 'flex';
         }
-
+    
         function closeImageModal() {
             const modal = document.getElementById('imageModal');
             modal.style.display = 'none';
         }
-
+    
         function loadProjects() {
             db.collection('projects').get().then((querySnapshot) => {
                 projects = [];
@@ -415,26 +411,26 @@
                 alert('Failed to load projects!');
             });
         }
-
+    
         function filterProjects() {
             const categoryFilter = document.getElementById('categoryFilter').value;
             const statusFilter = document.getElementById('statusFilter').value;
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
             const projectContainer = document.getElementById('projectContainer');
             projectContainer.innerHTML = '';
-
+    
             const pinnedProjects = projects.filter(p => p.pinned);
             const nonPinnedProjects = projects.filter(p => !p.pinned);
             const reversedNonPinned = [...nonPinnedProjects].reverse();
             const sortedProjects = [...pinnedProjects, ...reversedNonPinned];
-
+    
             sortedProjects.forEach((project, displayIndex) => {
                 const categoryMatch = categoryFilter === 'all' || project.type === categoryFilter;
-                const statusMatch = statusFilter === 'all' || 
+                const statusMatch = statusFilter === 'all' ||
                     (statusFilter === 'ongoing' && project.status === 'Ongoing') ||
                     (statusFilter === 'ended' && project.status === 'Ended');
                 const searchMatch = project.title.toLowerCase().includes(searchQuery);
-
+    
                 if (categoryMatch && statusMatch && searchMatch) {
                     const originalIndex = projects.findIndex(p => p.id === project.id);
                     const projectCard = document.createElement('div');
@@ -442,6 +438,10 @@
                     const imageSrc = project.photoURL || '';
                     const daysSinceUpload = calculateDaysSinceUpload(project.uploadDate);
                     const linkPage = project.type === 'Tools' ? 'tools.html' : 'tutorial.html';
+                    const isAdmin = currentUser && currentUser.email === 'admin@liquidityfarm.com';
+                    const isUploader = currentUser && project.uploaderUid === currentUser.uid;
+                    const canEdit = isAdmin || isUploader;
+    
                     projectCard.innerHTML = `
                         <div class="card-header">
                             <span class="uploader-name">${project.uploader || 'Unknown'}</span>
@@ -456,7 +456,7 @@
                             <p class="${project.status === 'Ongoing' ? 'status-ongoing' : 'status-ended'}">${project.status}</p>
                             <a href="./${linkPage}?title=${encodeURIComponent(project.title)}" class="tutorial-button">${project.type === 'Tools' ? 'Tools' : 'Tutorial'}</a>
                             <p class="start-end-label">${project.start} | ${project.end}</p>
-                            ${isAdmin ? `
+                            ${canEdit ? `
                                 <button class="edit-button" onclick="editProject(${originalIndex})">Edit</button>
                                 <button class="pin-button ${project.pinned ? 'pinned' : ''}" onclick="togglePin(${originalIndex}, '${project.id}')">
                                     ${project.pinned ? 'Unpin' : 'Pin'}
@@ -468,7 +468,7 @@
                 }
             });
         }
-
+    
         function editProject(index) {
             window.location.href = `./upload.html?edit=${index}`;
         }

@@ -438,15 +438,17 @@
             console.error('Firebase SDK not loaded.');
             alert('Firebase failed to load. Please check your internet or CDN.');
         }
-
+    
         let projects = [];
         let editIndex = null;
         let editDocId = null;
         let tutorialContent = { name: '', link: '', content: '' };
         let codes = [];
         let currentCodeIndex = null;
-
+        let currentUser = null;
+    
         firebase.auth().onAuthStateChanged((user) => {
+            currentUser = user;
             if (user) {
                 localStorage.setItem('adminLoggedIn', 'true');
                 localStorage.setItem('username', user.displayName || user.email.split('@')[0]);
@@ -463,12 +465,12 @@
                 updateAuthLinks();
             }
         });
-
+    
         function goBack() {
             sessionStorage.setItem('hasGoneBack', 'true');
             window.history.back();
         }
-
+    
         function toggleProjectMenu() {
             const menu = document.getElementById('projectMenu');
             menu.classList.toggle('active');
@@ -478,7 +480,7 @@
                 closeAllSubMenus();
             }
         }
-
+    
         function updateAuthLinks() {
             firebase.auth().onAuthStateChanged((user) => {
                 const isLoggedIn = !!user;
@@ -494,7 +496,7 @@
                 }
             });
         }
-
+    
         function logoutAdmin() {
             firebase.auth().signOut().then(() => {
                 localStorage.removeItem('adminLoggedIn');
@@ -507,7 +509,7 @@
                 alert('Failed to logout!');
             });
         }
-
+    
         function loginAdmin() {
             const email = document.getElementById('adminUsername').value;
             const password = document.getElementById('adminPassword').value;
@@ -520,7 +522,7 @@
                     alert('Incorrect email or password!');
                 });
         }
-
+    
         function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             firebase.auth().signInWithPopup(provider)
@@ -532,12 +534,12 @@
                     alert('Failed to login with Google!');
                 });
         }
-
+    
         function closeAllSubMenus() {
             const subMenus = document.querySelectorAll('.project-actions');
             subMenus.forEach(menu => menu.classList.remove('active'));
         }
-
+    
         function showProjectActions(li) {
             console.log('Showing actions for:', li.textContent.trim());
             closeAllSubMenus();
@@ -546,7 +548,7 @@
                 subMenu.classList.add('active');
             }
         }
-
+    
         function loadProjects() {
             db.collection('projects').get().then((querySnapshot) => {
                 projects = [];
@@ -559,16 +561,18 @@
                 alert('Failed to load projects!');
             });
         }
-
+    
         function filterProjects() {
             const searchQuery = document.getElementById('projectSearch').value.toLowerCase();
             const projectListItems = document.getElementById('projectListItems');
             projectListItems.innerHTML = '';
-
+    
+            const isAdmin = currentUser && currentUser.email === 'admin@liquidityfarm.com';
             const filteredProjects = projects.filter(project => 
-                project.title.toLowerCase().includes(searchQuery)
+                project.title.toLowerCase().includes(searchQuery) &&
+                (isAdmin || project.uploaderUid === (currentUser ? currentUser.uid : null))
             );
-
+    
             if (filteredProjects.length === 0) {
                 const li = document.createElement('li');
                 li.className = 'no-projects';
@@ -593,11 +597,11 @@
                 });
             }
         }
-
+    
         function displayProjectList() {
             filterProjects();
         }
-
+    
         function toggleFields() {
             const projectType = document.getElementById('projectType').value;
             document.getElementById('tutorialButton').style.display = projectType === 'Tools' ? 'none' : 'block';
@@ -608,7 +612,7 @@
                 document.getElementById('codeEntries').innerHTML = '';
             }
         }
-
+    
         function renderCodeEntries() {
             const codeEntries = document.getElementById('codeEntries');
             codeEntries.innerHTML = '';
@@ -623,12 +627,12 @@
                 codeEntries.appendChild(entry);
             });
         }
-
+    
         function addCodeEntry() {
             codes.push({ name: '', content: '', type: 'HTML' });
             renderCodeEntries();
         }
-
+    
         function editCodeEntry(index) {
             currentCodeIndex = index;
             const modal = document.getElementById('codeModal');
@@ -640,18 +644,18 @@
             modalCodeType.value = codes[index].type;
             modal.style.display = 'block';
         }
-
+    
         function removeCodeEntry(index) {
             codes.splice(index, 1);
             renderCodeEntries();
         }
-
+    
         if (localStorage.getItem('adminLoggedIn') === 'true') {
             document.getElementById('adminSection').style.display = 'block';
             loadProjects();
             toggleFields();
         }
-
+    
         const params = new URLSearchParams(window.location.search);
         if (params.has('edit')) {
             editIndex = parseInt(params.get('edit'));
@@ -662,6 +666,13 @@
                 });
                 if (editIndex >= 0 && editIndex < projects.length) {
                     const project = projects[editIndex];
+                    const isAdmin = currentUser && currentUser.email === 'admin@liquidityfarm.com';
+                    const isUploader = currentUser && project.uploaderUid === currentUser.uid;
+                    if (!isAdmin && !isUploader) {
+                        alert('You do not have permission to edit this project!');
+                        window.location.href = './index.html';
+                        return;
+                    }
                     editDocId = project.id;
                     document.getElementById('pageTitle').textContent = 'Edit';
                     document.getElementById('formTitle').textContent = 'Edit Project';
@@ -685,14 +696,20 @@
                 alert('Failed to load project for editing!');
             });
         }
-
+    
         function editProject(index) {
             console.log('Editing project at index:', index);
             window.location.href = `./upload.html?edit=${index}`;
         }
-
+    
         function deleteProject(index, docId) {
             console.log('Deleting project at index:', index);
+            const isAdmin = currentUser && currentUser.email === 'admin@liquidityfarm.com';
+            const isUploader = currentUser && projects[index].uploaderUid === currentUser.uid;
+            if (!isAdmin && !isUploader) {
+                alert('You do not have permission to delete this project!');
+                return;
+            }
             if (confirm(`Are you sure you want to delete the project "${projects[index].title}"?`)) {
                 db.collection('projects').doc(docId).delete().then(() => {
                     loadProjects();
@@ -702,7 +719,7 @@
                 });
             }
         }
-
+    
         function openTutorialModal() {
             const modal = document.getElementById('tutorialModal');
             const modalTutorial = document.getElementById('modalTutorial');
@@ -713,11 +730,11 @@
             modalTutorialLink.value = tutorialContent.link;
             modal.style.display = 'block';
         }
-
+    
         function closeTutorialModal() {
             document.getElementById('tutorialModal').style.display = 'none';
         }
-
+    
         function saveTutorial() {
             tutorialContent = {
                 name: document.getElementById('modalTutorialName').value.trim(),
@@ -727,7 +744,7 @@
             console.log('Saved tutorial:', tutorialContent);
             closeTutorialModal();
         }
-
+    
         function openCodeModal() {
             const modal = document.getElementById('codeModal');
             const modalCodeName = document.getElementById('modalCodeName');
@@ -744,12 +761,12 @@
             }
             modal.style.display = 'block';
         }
-
+    
         function closeCodeModal() {
             document.getElementById('codeModal').style.display = 'none';
             currentCodeIndex = null;
         }
-
+    
         function saveCode() {
             const name = document.getElementById('modalCodeName').value;
             const content = document.getElementById('modalCodeContent').value;
@@ -762,7 +779,7 @@
             renderCodeEntries();
             closeCodeModal();
         }
-
+    
         function submitProject() {
             const photo = document.getElementById('projectPhoto').files[0];
             let title = document.getElementById('projectTitle').value.toUpperCase();
@@ -771,12 +788,12 @@
             const end = document.getElementById('projectEnd').value || 'N/A';
             const status = document.getElementById('projectStatus').value || 'Ongoing';
             const username = localStorage.getItem('username') || 'Unknown';
-
+    
             if (type === 'Tools' && codes.length === 0) {
                 alert('Please add at least one code for Tools project!');
                 return;
             }
-
+    
             const saveProject = (photoURL) => {
                 const project = {
                     photoURL: photoURL || '',
@@ -787,15 +804,16 @@
                     status,
                     uploadDate: new Date().toISOString(),
                     pinned: editIndex !== null ? projects[editIndex].pinned || false : false,
-                    uploader: username
+                    uploader: username,
+                    uploaderUid: currentUser ? currentUser.uid : ''
                 };
-
+    
                 if (type === 'Tools') {
                     project.codes = codes;
                 } else {
                     project.tutorial = { ...tutorialContent };
                 }
-
+    
                 if (editIndex !== null) {
                     db.collection('projects').doc(editDocId).update(project)
                         .then(() => {
@@ -820,7 +838,7 @@
                         });
                 }
             };
-
+    
             function resetForm() {
                 document.getElementById('projectPhoto').value = '';
                 document.getElementById('projectTitle').value = '';
@@ -838,13 +856,13 @@
                 toggleFields();
                 loadProjects();
             }
-
+    
             if (photo) {
                 const formData = new FormData();
                 formData.append('file', photo);
                 formData.append('upload_preset', 'liquidityfarm');
                 formData.append('cloud_name', 'dwcoic3k9');
-
+    
                 fetch(`https://api.cloudinary.com/v1_1/dwcoic3k9/image/upload`, {
                     method: 'POST',
                     body: formData
