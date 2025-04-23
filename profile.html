@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIQUIDITY FARM</title>
+    <title>User Profile - LIQUIDITY FARM</title>
     <!-- Firebase Compatibility SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -30,20 +30,16 @@
             align-items: center;
             z-index: 1000;
             box-sizing: border-box;
-            position: relative;
         }
-        .nav-line {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 2px;
-            background-color: #ffcc00;
-            animation: slide 3s infinite linear;
+        nav a {
+            color: #ffcc00;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
         }
-        @keyframes slide {
-            0% { width: 0; left: 0; }
-            50% { width: 100%; left: 0; }
-            100% { width: 0; left: 100%; }
+        nav a:hover {
+            text-decoration: underline;
         }
         nav button {
             background-color: #ffcc00;
@@ -53,25 +49,25 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
-            margin-left: 5px;
         }
         nav button:hover {
             background-color: #e6b800;
+        }
+        nav .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        nav .nav-center {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
         }
         nav .nav-right {
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-        nav .nav-right a {
-            color: #ffcc00;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-        nav .nav-right a:hover {
-            text-decoration: underline;
         }
         nav .nav-right .username {
             color: #ffcc00;
@@ -79,45 +75,17 @@
             font-weight: bold;
             margin-left: 10px;
         }
-        nav .nav-center {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-        }
-        nav .nav-center input {
-            padding: 8px;
-            width: 200px;
-            border: none;
-            border-radius: 5px;
-            background-color: #333333;
-            color: #ffffff;
-            font-size: 14px;
-        }
-        nav .nav-center input::placeholder {
-            color: #cccccc;
-        }
         h1 {
             text-align: center;
             color: #ffcc00;
             margin-top: 80px;
-        }
-        .filter-section {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .filter-section select {
-            padding: 10px;
-            margin: 5px;
-            border: none;
-            border-radius: 5px;
-            background-color: #333333;
-            color: #ffffff;
         }
         .project-container {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
             justify-content: center;
+            margin-top: 20px;
         }
         .project-card {
             background-color: #1a1a1a;
@@ -221,23 +189,6 @@
         .project-content .tutorial-button:hover {
             background-color: #e6b800;
         }
-        .project-content .pin-button {
-            background-color: #666666;
-            color: #ffffff;
-            border: none;
-            padding: 6px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            margin: 5px auto;
-        }
-        .project-content .pin-button.pinned {
-            background-color: #ffcc00;
-            color: #000000;
-        }
-        .project-content .pin-button:hover {
-            background-color: #e6b800;
-        }
         .fallback-text {
             color: #ffcc00;
             font-size: 14px;
@@ -247,19 +198,6 @@
             font-size: 8px;
             color: #ffcc00;
             margin: 5px 0;
-        }
-        .edit-button {
-            display: none;
-            background-color: #ffcc00;
-            color: #000000;
-            border: none;
-            padding: 8px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px auto;
-        }
-        .edit-button:hover {
-            background-color: #e6b800;
         }
         .image-modal {
             display: none;
@@ -295,34 +233,16 @@
             <button id="backButton" onclick="goBack()">Back</button>
         </div>
         <div class="nav-center">
-            <input type="text" id="searchInput" placeholder="Search projects..." oninput="filterProjects()">
+            <a href="./index.html">LIQUIDITY FARM</a>
             <a href="./dashboard.html">Dashboard</a>
         </div>
         <div class="nav-right">
-            <button onclick="window.location.href='./upload.html'">Upload</button>
             <a href="./upload.html" id="loginLink">Login</a>
             <span class="username" id="username"></span>
             <a href="#" id="logoutLink" onclick="logoutAdmin()" style="display: none;">Logout</a>
         </div>
-        <div class="nav-line"></div>
     </nav>
-    <h1>LIQUIDITY FARM</h1>
-
-    <div class="filter-section">
-        <select id="categoryFilter" onchange="filterProjects()">
-            <option value="all">All Categories</option>
-            <option value="Retro">Retro</option>
-            <option value="Testnet">Testnet</option>
-            <option value="Garapan">Garapan</option>
-            <option value="Tools">Tools</option>
-        </select>
-        <select id="statusFilter" onchange="filterProjects()">
-            <option value="all">All Statuses</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="ended">Ended</option>
-        </select>
-    </div>
-
+    <h1 id="profileTitle">User Profile</h1>
     <div class="project-container" id="projectContainer"></div>
 
     <div id="imageModal" class="image-modal">
@@ -335,10 +255,10 @@
             console.error('Firebase SDK not loaded.');
             alert('Firebase failed to load. Please check your internet or CDN.');
         }
-    
+
         let projects = [];
         let currentUser = null;
-    
+
         firebase.auth().onAuthStateChanged((user) => {
             currentUser = user;
             const isLoggedIn = !!user;
@@ -348,14 +268,14 @@
             document.getElementById('loginLink').style.display = isLoggedIn ? 'none' : 'inline';
             document.getElementById('logoutLink').style.display = isLoggedIn ? 'inline' : 'none';
             document.getElementById('username').textContent = isLoggedIn ? username : '';
-            loadProjects();
+            loadProfile();
         });
-    
+
         function goBack() {
             sessionStorage.setItem('hasGoneBack', 'true');
             window.history.back();
         }
-    
+
         function logoutAdmin() {
             firebase.auth().signOut().then(() => {
                 localStorage.removeItem('adminLoggedIn');
@@ -366,7 +286,7 @@
                 alert('Failed to logout!');
             });
         }
-    
+
         function calculateDaysSinceUpload(uploadDate) {
             const upload = new Date(uploadDate);
             const today = new Date();
@@ -374,102 +294,85 @@
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             return diffDays;
         }
-    
-        function togglePin(index, docId) {
-            const project = projects[index];
-            project.pinned = !project.pinned;
-            db.collection('projects').doc(docId).update({
-                pinned: project.pinned
-            }).then(() => {
-                loadProjects();
-            }).catch((error) => {
-                console.error('Error updating pin:', error);
-                alert('Failed to update pin status!');
-            });
-        }
-    
+
         function openImageModal(src) {
             const modal = document.getElementById('imageModal');
             const modalImage = document.getElementById('modalImage');
             modalImage.src = src;
             modal.style.display = 'flex';
         }
-    
+
         function closeImageModal() {
             const modal = document.getElementById('imageModal');
             modal.style.display = 'none';
         }
-    
-        function loadProjects() {
-            db.collection('projects').get().then((querySnapshot) => {
-                projects = [];
-                querySnapshot.forEach((doc) => {
-                    projects.push({ id: doc.id, ...doc.data() });
+
+        function loadProfile() {
+            const params = new URLSearchParams(window.location.search);
+            const uploaderUid = params.get('uid');
+            if (!uploaderUid) {
+                document.getElementById('projectContainer').innerHTML = '<p>No user selected.</p>';
+                return;
+            }
+
+            db.collection('projects').where('uploaderUid', '==', decodeURIComponent(uploaderUid)).get()
+                .then((querySnapshot) => {
+                    projects = [];
+                    let uploaderName = 'Unknown';
+                    querySnapshot.forEach((doc) => {
+                        const project = doc.data();
+                        projects.push({ id: doc.id, ...project });
+                        uploaderName = project.uploader || uploaderName;
+                    });
+
+                    document.getElementById('profileTitle').textContent = `${uploaderName}'s Profile`;
+
+                    const projectContainer = document.getElementById('projectContainer');
+                    projectContainer.innerHTML = '';
+
+                    if (projects.length === 0) {
+                        projectContainer.innerHTML = '<p>No projects uploaded by this user.</p>';
+                        return;
+                    }
+
+                    projects.forEach((project, index) => {
+                        const projectCard = document.createElement('div');
+                        projectCard.className = 'project-card';
+                        const imageSrc = project.photoURL || '';
+                        const daysSinceUpload = calculateDaysSinceUpload(project.uploadDate);
+                        const linkPage = project.type === 'Tools' ? 'tools.html' : 'tutorial.html';
+                        const isAdmin = currentUser && currentUser.email === 'admin@liquidityfarm.com';
+                        const isUploader = currentUser && project.uploaderUid === currentUser.uid;
+                        const canEdit = isAdmin || isUploader;
+
+                        projectCard.innerHTML = `
+                            <div class="card-header">
+                                <span class="uploader-name">${project.uploader || 'Unknown'}</span>
+                                <span class="days-label">${daysSinceUpload} days</span>
+                                <span class="category-label">${project.type}</span>
+                            </div>
+                            <div class="project-image">
+                                ${imageSrc ? `<img src="${imageSrc}" alt="${project.title}" onclick="openImageModal('${imageSrc}')">` : `<p class="fallback-text">Image not available</p>`}
+                            </div>
+                            <div class="project-content">
+                                <h3>${project.title}</h3>
+                                <p class="${project.status === 'Ongoing' ? 'status-ongoing' : 'status-ended'}">${project.status}</p>
+                                <a href="./${linkPage}?title=${encodeURIComponent(project.title)}" class="tutorial-button">${project.type === 'Tools' ? 'Tools' : 'Tutorial'}</a>
+                                <p class="start-end-label">${project.start} | ${project.end}</p>
+                                ${canEdit ? `
+                                    <button class="edit-button" onclick="editProject(${index})">Edit</button>
+                                ` : ''}
+                            </div>
+                        `;
+                        projectContainer.appendChild(projectCard);
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error loading profile:', error);
+                    alert('Failed to load profile!');
                 });
-                filterProjects();
-            }).catch((error) => {
-                console.error('Error loading projects:', error);
-                alert('Failed to load projects!');
-            });
         }
-    
-        function filterProjects() {
-            const categoryFilter = document.getElementById('categoryFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            const projectContainer = document.getElementById('projectContainer');
-            projectContainer.innerHTML = '';
-    
-            const pinnedProjects = projects.filter(p => p.pinned);
-            const nonPinnedProjects = projects.filter(p => !p.pinned);
-            const reversedNonPinned = [...nonPinnedProjects].reverse();
-            const sortedProjects = [...pinnedProjects, ...reversedNonPinned];
-    
-            sortedProjects.forEach((project, displayIndex) => {
-                const categoryMatch = categoryFilter === 'all' || project.type === categoryFilter;
-                const statusMatch = statusFilter === 'all' ||
-                    (statusFilter === 'ongoing' && project.status === 'Ongoing') ||
-                    (statusFilter === 'ended' && project.status === 'Ended');
-                const searchMatch = project.title.toLowerCase().includes(searchQuery);
-    
-                if (categoryMatch && statusMatch && searchMatch) {
-                    const originalIndex = projects.findIndex(p => p.id === project.id);
-                    const projectCard = document.createElement('div');
-                    projectCard.className = 'project-card';
-                    const imageSrc = project.photoURL || '';
-                    const daysSinceUpload = calculateDaysSinceUpload(project.uploadDate);
-                    const linkPage = project.type === 'Tools' ? 'tools.html' : 'tutorial.html';
-                    const isAdmin = currentUser && currentUser.email === 'admin@liquidityfarm.com';
-                    const isUploader = currentUser && project.uploaderUid === currentUser.uid;
-                    const canEdit = isAdmin || isUploader;
-    
-                    projectCard.innerHTML = `
-                        <div class="card-header">
-                            <span class="uploader-name">${project.uploader || 'Unknown'}</span>
-                            <span class="days-label">${daysSinceUpload} days</span>
-                            <span class="category-label">${project.type}</span>
-                        </div>
-                        <div class="project-image">
-                            ${imageSrc ? `<img src="${imageSrc}" alt="${project.title}" onclick="openImageModal('${imageSrc}')">` : `<p class="fallback-text">Image not available</p>`}
-                        </div>
-                        <div class="project-content">
-                            <h3>${project.title}</h3>
-                            <p class="${project.status === 'Ongoing' ? 'status-ongoing' : 'status-ended'}">${project.status}</p>
-                            <a href="./${linkPage}?title=${encodeURIComponent(project.title)}" class="tutorial-button">${project.type === 'Tools' ? 'Tools' : 'Tutorial'}</a>
-                            <p class="start-end-label">${project.start} | ${project.end}</p>
-                            ${canEdit ? `
-                                <button class="edit-button" onclick="editProject(${originalIndex})">Edit</button>
-                                <button class="pin-button ${project.pinned ? 'pinned' : ''}" onclick="togglePin(${originalIndex}, '${project.id}')">
-                                    ${project.pinned ? 'Unpin' : 'Pin'}
-                                </button>
-                            ` : ''}
-                        </div>
-                    `;
-                    projectContainer.appendChild(projectCard);
-                }
-            });
-        }
-    
+
         function editProject(index) {
             window.location.href = `./upload.html?edit=${index}`;
         }
