@@ -7,6 +7,7 @@
     <!-- Firebase Compatibility SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="firebase.js"></script>
     <style>
         body {
@@ -140,9 +141,10 @@
             alert('Firebase failed to load. Please check your internet or CDN.');
         }
 
-        let projects = JSON.parse(localStorage.getItem('projects')) || [];
+        let projects = [];
 
         updateAuthLinks();
+        displayTutorial();
 
         function goBack() {
             sessionStorage.setItem('hasGoneBack', 'true');
@@ -177,29 +179,36 @@
             const params = new URLSearchParams(window.location.search);
             const projectTitle = params.get('title');
             const tutorialContent = document.getElementById('tutorialContent');
-            const project = projects.find(p => p.title === projectTitle);
-
-            if (project && project.tutorial && (project.tutorial.name || project.tutorial.link || project.tutorial.content)) {
-                let html = '';
-                if (project.tutorial.name) {
-                    html += `<h2>${project.tutorial.name}</h2>`;
-                } else {
-                    html += `<h2>Tutorial</h2>`;
-                }
-                if (project.tutorial.content) {
-                    html += `<p>${project.tutorial.content.replace(/\n/g, '<br>')}</p>`;
-                }
-                if (project.tutorial.link) {
-                    html += `<a href="${project.tutorial.link}" class="lets-go" target="_blank">Lets Go</a>`;
-                }
-                tutorialContent.innerHTML = html;
-            } else {
-                tutorialContent.innerHTML = `<p>No tutorial available for this project.</p>`;
-            }
-            console.log('Displayed tutorial for:', projectTitle, project?.tutorial);
+            db.collection('projects').where('title', '==', decodeURIComponent(projectTitle)).get()
+                .then((querySnapshot) => {
+                    if (!querySnapshot.empty) {
+                        const project = querySnapshot.docs[0].data();
+                        if (project.tutorial && (project.tutorial.name || project.tutorial.link || project.tutorial.content)) {
+                            let html = '';
+                            if (project.tutorial.name) {
+                                html += `<h2>${project.tutorial.name}</h2>`;
+                            } else {
+                                html += `<h2>Tutorial</h2>`;
+                            }
+                            if (project.tutorial.content) {
+                                html += `<p>${project.tutorial.content.replace(/\n/g, '<br>')}</p>`;
+                            }
+                            if (project.tutorial.link) {
+                                html += `<a href="${project.tutorial.link}" class="lets-go" target="_blank">Lets Go</a>`;
+                            }
+                            tutorialContent.innerHTML = html;
+                        } else {
+                            tutorialContent.innerHTML = `<p>No tutorial available for this project.</p>`;
+                        }
+                        console.log('Displayed tutorial for:', projectTitle, project.tutorial);
+                    } else {
+                        tutorialContent.innerHTML = `<p>No tutorial available for this project.</p>`;
+                    }
+                }).catch((error) => {
+                    console.error('Error loading tutorial:', error);
+                    alert('Failed to load tutorial!');
+                });
         }
-
-        displayTutorial();
     </script>
 </body>
 </html>

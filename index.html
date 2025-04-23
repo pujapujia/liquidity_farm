@@ -7,6 +7,7 @@
     <!-- Firebase Compatibility SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="firebase.js"></script>
     <style>
         body {
@@ -334,10 +335,11 @@
             alert('Firebase failed to load. Please check your internet or CDN.');
         }
 
-        let projects = JSON.parse(localStorage.getItem('projects')) || [];
+        let projects = [];
         const isAdmin = localStorage.getItem('adminLoggedIn') === 'true';
 
         updateAuthLinks();
+        loadProjects();
 
         function goBack() {
             sessionStorage.setItem('hasGoneBack', 'true');
@@ -376,10 +378,17 @@
             return diffDays;
         }
 
-        function togglePin(index) {
-            projects[index].pinned = !projects[index].pinned;
-            localStorage.setItem('projects', JSON.stringify(projects));
-            filterProjects();
+        function togglePin(index, docId) {
+            const project = projects[index];
+            project.pinned = !project.pinned;
+            db.collection('projects').doc(docId).update({
+                pinned: project.pinned
+            }).then(() => {
+                loadProjects();
+            }).catch((error) => {
+                console.error('Error updating pin:', error);
+                alert('Failed to update pin status!');
+            });
         }
 
         function openImageModal(src) {
@@ -392,6 +401,19 @@
         function closeImageModal() {
             const modal = document.getElementById('imageModal');
             modal.style.display = 'none';
+        }
+
+        function loadProjects() {
+            db.collection('projects').get().then((querySnapshot) => {
+                projects = [];
+                querySnapshot.forEach((doc) => {
+                    projects.push({ id: doc.id, ...doc.data() });
+                });
+                filterProjects();
+            }).catch((error) => {
+                console.error('Error loading projects:', error);
+                alert('Failed to load projects!');
+            });
         }
 
         function filterProjects() {
@@ -414,7 +436,7 @@
                 const searchMatch = project.title.toLowerCase().includes(searchQuery);
 
                 if (categoryMatch && statusMatch && searchMatch) {
-                    const originalIndex = projects.findIndex(p => p.title === project.title);
+                    const originalIndex = projects.findIndex(p => p.id === project.id);
                     const projectCard = document.createElement('div');
                     projectCard.className = 'project-card';
                     const imageSrc = project.photoURL || '';
@@ -436,7 +458,7 @@
                             <p class="start-end-label">${project.start} | ${project.end}</p>
                             ${isAdmin ? `
                                 <button class="edit-button" onclick="editProject(${originalIndex})">Edit</button>
-                                <button class="pin-button ${project.pinned ? 'pinned' : ''}" onclick="togglePin(${originalIndex})">
+                                <button class="pin-button ${project.pinned ? 'pinned' : ''}" onclick="togglePin(${originalIndex}, '${project.id}')">
                                     ${project.pinned ? 'Unpin' : 'Pin'}
                                 </button>
                             ` : ''}
@@ -450,8 +472,6 @@
         function editProject(index) {
             window.location.href = `./upload.html?edit=${index}`;
         }
-
-        filterProjects();
     </script>
 </body>
 </html>

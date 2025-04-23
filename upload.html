@@ -7,9 +7,8 @@
     <!-- Firebase Compatibility SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="firebase.js"></script>
-    <!-- Cloudinary SDK -->
-    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <style>
         body {
             background-color: #000000;
@@ -440,8 +439,9 @@
             alert('Firebase failed to load. Please check your internet or CDN.');
         }
 
-        let projects = JSON.parse(localStorage.getItem('projects')) || [];
+        let projects = [];
         let editIndex = null;
+        let editDocId = null;
         let tutorialContent = { name: '', link: '', content: '' };
         let codes = [];
         let currentCodeIndex = null;
@@ -452,7 +452,7 @@
                 localStorage.setItem('username', user.displayName || user.email.split('@')[0]);
                 document.getElementById('adminSection').style.display = 'block';
                 document.getElementById('loginSection').style.display = 'none';
-                displayProjectList();
+                loadProjects();
                 toggleFields();
                 updateAuthLinks();
             } else {
@@ -490,7 +490,7 @@
                 document.getElementById('loginSection').style.display = isLoggedIn ? 'none' : 'block';
                 document.getElementById('username').textContent = isLoggedIn ? username : '';
                 if (isLoggedIn) {
-                    displayProjectList();
+                    loadProjects();
                 }
             });
         }
@@ -547,6 +547,19 @@
             }
         }
 
+        function loadProjects() {
+            db.collection('projects').get().then((querySnapshot) => {
+                projects = [];
+                querySnapshot.forEach((doc) => {
+                    projects.push({ id: doc.id, ...doc.data() });
+                });
+                filterProjects();
+            }).catch((error) => {
+                console.error('Error loading projects:', error);
+                alert('Failed to load projects!');
+            });
+        }
+
         function filterProjects() {
             const searchQuery = document.getElementById('projectSearch').value.toLowerCase();
             const projectListItems = document.getElementById('projectListItems');
@@ -563,13 +576,13 @@
                 projectListItems.appendChild(li);
             } else {
                 filteredProjects.forEach((project, index) => {
-                    const originalIndex = projects.findIndex(p => p.title === project.title);
+                    const originalIndex = projects.findIndex(p => p.id === project.id);
                     const li = document.createElement('li');
                     li.innerHTML = `
                         ${project.title}
                         <div class="project-actions">
                             <button onclick="editProject(${originalIndex})">Edit</button>
-                            <button class="delete" onclick="deleteProject(${originalIndex})">Delete</button>
+                            <button class="delete" onclick="deleteProject(${originalIndex}, '${project.id}')">Delete</button>
                         </div>
                     `;
                     li.addEventListener('click', () => {
@@ -635,32 +648,42 @@
 
         if (localStorage.getItem('adminLoggedIn') === 'true') {
             document.getElementById('adminSection').style.display = 'block';
-            displayProjectList();
+            loadProjects();
             toggleFields();
         }
 
         const params = new URLSearchParams(window.location.search);
         if (params.has('edit')) {
             editIndex = parseInt(params.get('edit'));
-            if (editIndex >= 0 && editIndex < projects.length) {
-                const project = projects[editIndex];
-                document.getElementById('pageTitle').textContent = 'Edit';
-                document.getElementById('formTitle').textContent = 'Edit Project';
-                document.getElementById('submitButton').textContent = 'Save Changes';
-                document.getElementById('projectTitle').value = project.title;
-                document.getElementById('projectType').value = project.type;
-                document.getElementById('projectStart').value = project.start;
-                document.getElementById('projectEnd').value = project.end;
-                document.getElementById('projectStatus').value = project.status;
-                if (project.type === 'Tools') {
-                    codes = project.codes || [];
-                    if (project.code1) codes.push({ name: 'Code 1', content: project.code1, type: project.code1Type || 'HTML' });
-                    if (project.code2) codes.push({ name: 'Code 2', content: project.code2, type: project.code2Type || 'HTML' });
-                } else {
-                    tutorialContent = project.tutorial || { name: '', link: '', content: '' };
+            db.collection('projects').get().then((querySnapshot) => {
+                projects = [];
+                querySnapshot.forEach((doc) => {
+                    projects.push({ id: doc.id, ...doc.data() });
+                });
+                if (editIndex >= 0 && editIndex < projects.length) {
+                    const project = projects[editIndex];
+                    editDocId = project.id;
+                    document.getElementById('pageTitle').textContent = 'Edit';
+                    document.getElementById('formTitle').textContent = 'Edit Project';
+                    document.getElementById('submitButton').textContent = 'Save Changes';
+                    document.getElementById('projectTitle').value = project.title;
+                    document.getElementById('projectType').value = project.type;
+                    document.getElementById('projectStart').value = project.start;
+                    document.getElementById('projectEnd').value = project.end;
+                    document.getElementById('projectStatus').value = project.status;
+                    if (project.type === 'Tools') {
+                        codes = project.codes || [];
+                        if (project.code1) codes.push({ name: 'Code 1', content: project.code1, type: project.code1Type || 'HTML' });
+                        if (project.code2) codes.push({ name: 'Code 2', content: project.code2, type: project.code2Type || 'HTML' });
+                    } else {
+                        tutorialContent = project.tutorial || { name: '', link: '', content: '' };
+                    }
+                    toggleFields();
                 }
-                toggleFields();
-            }
+            }).catch((error) => {
+                console.error('Error loading project for edit:', error);
+                alert('Failed to load project for editing!');
+            });
         }
 
         function editProject(index) {
@@ -668,12 +691,15 @@
             window.location.href = `./upload.html?edit=${index}`;
         }
 
-        function deleteProject(index) {
+        function deleteProject(index, docId) {
             console.log('Deleting project at index:', index);
             if (confirm(`Are you sure you want to delete the project "${projects[index].title}"?`)) {
-                projects.splice(index, 1);
-                localStorage.setItem('projects', JSON.stringify(projects));
-                displayProjectList();
+                db.collection('projects').doc(docId).delete().then(() => {
+                    loadProjects();
+                }).catch((error) => {
+                    console.error('Error deleting project:', error);
+                    alert('Failed to delete project!');
+                });
             }
         }
 
@@ -771,14 +797,31 @@
                 }
 
                 if (editIndex !== null) {
-                    projects[editIndex] = project;
+                    db.collection('projects').doc(editDocId).update(project)
+                        .then(() => {
+                            resetForm();
+                            alert('Project successfully edited!');
+                            window.location.href = './index.html';
+                        })
+                        .catch((error) => {
+                            console.error('Error updating project:', error);
+                            alert('Failed to update project!');
+                        });
                 } else {
-                    projects.push(project);
+                    db.collection('projects').add(project)
+                        .then(() => {
+                            resetForm();
+                            alert('Project successfully uploaded!');
+                            window.location.href = './index.html';
+                        })
+                        .catch((error) => {
+                            console.error('Error adding project:', error);
+                            alert('Failed to upload project!');
+                        });
                 }
+            };
 
-                localStorage.setItem('projects', JSON.stringify(projects));
-                displayProjectList();
-
+            function resetForm() {
                 document.getElementById('projectPhoto').value = '';
                 document.getElementById('projectTitle').value = '';
                 document.getElementById('projectType').value = 'Retro';
@@ -788,14 +831,13 @@
                 tutorialContent = { name: '', link: '', content: '' };
                 codes = [];
                 editIndex = null;
+                editDocId = null;
                 document.getElementById('pageTitle').textContent = 'Upload';
                 document.getElementById('formTitle').textContent = 'Upload New Project';
                 document.getElementById('submitButton').textContent = 'Upload Project';
                 toggleFields();
-
-                alert(editIndex !== null ? 'Project successfully edited!' : 'Project successfully uploaded!');
-                window.location.href = './index.html';
-            };
+                loadProjects();
+            }
 
             if (photo) {
                 const formData = new FormData();
