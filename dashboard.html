@@ -119,12 +119,10 @@
         </div>
         <div class="nav-center">
             <a href="./index.html">LIQUIDITY FARM</a>
-            <a href="./dashboard.html">Dashboard</a>
         </div>
         <div class="nav-right">
-            <a href="./upload.html" id="loginLink">Login</a>
-            <span class="username" id="username"></span>
-            <a href="#" id="logoutLink" onclick="logoutAdmin()" style="display: none;">Logout</a>
+            <a href="./upload.html">Upload</a>
+            <a href="#" id="usernameLink" class="username"></a>
         </div>
     </nav>
     <h1>Dashboard</h1>
@@ -146,36 +144,23 @@
             console.error('Firebase SDK not loaded.');
             alert('Firebase failed to load. Please check your internet or CDN.');
         }
-
+    
         function goBack() {
             sessionStorage.setItem('hasGoneBack', 'true');
             window.history.back();
         }
-
-        function updateAuthLinks() {
-            firebase.auth().onAuthStateChanged((user) => {
-                const isLoggedIn = !!user;
-                const username = user ? (user.displayName || user.email.split('@')[0]) : '';
-                localStorage.setItem('adminLoggedIn', isLoggedIn.toString());
-                localStorage.setItem('username', username);
-                document.getElementById('loginLink').style.display = isLoggedIn ? 'none' : 'inline';
-                document.getElementById('logoutLink').style.display = isLoggedIn ? 'inline' : 'none';
-                document.getElementById('username').textContent = isLoggedIn ? username : '';
-            });
-        }
-
-        function logoutAdmin() {
-            firebase.auth().signOut().then(() => {
-                localStorage.removeItem('adminLoggedIn');
-                localStorage.removeItem('username');
-                updateAuthLinks();
-                window.location.href = './upload.html';
-            }).catch((error) => {
-                console.error('Logout error:', error);
-                alert('Failed to logout!');
-            });
-        }
-
+    
+        firebase.auth().onAuthStateChanged((user) => {
+            const isLoggedIn = !!user;
+            const username = user ? (user.displayName || user.email.split('@')[0]) : '';
+            localStorage.setItem('adminLoggedIn', isLoggedIn.toString());
+            localStorage.setItem('username', username);
+            const usernameLink = document.getElementById('usernameLink');
+            usernameLink.textContent = isLoggedIn ? username : '';
+            usernameLink.href = isLoggedIn ? `./profile.html?uid=${encodeURIComponent(user.uid)}` : './upload.html';
+            loadDashboard();
+        });
+    
         function loadDashboard() {
             db.collection('projects').get().then((querySnapshot) => {
                 const userUploads = {};
@@ -191,11 +176,11 @@
                     }
                     userUploads[uploaderUid].count += 1;
                 });
-
+    
                 const sortedUsers = Object.entries(userUploads)
                     .map(([uid, data]) => ({ uid, ...data }))
                     .sort((a, b) => b.count - a.count || a.username.localeCompare(b.username));
-
+    
                 const tableBody = document.getElementById('dashboardTableBody');
                 tableBody.innerHTML = '';
                 sortedUsers.forEach((user, index) => {
@@ -207,7 +192,7 @@
                     `;
                     tableBody.appendChild(row);
                 });
-
+    
                 if (sortedUsers.length === 0) {
                     tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No uploads yet.</td></tr>';
                 }
@@ -216,9 +201,6 @@
                 alert('Failed to load dashboard!');
             });
         }
-
-        updateAuthLinks();
-        loadDashboard();
     </script>
 </body>
 </html>

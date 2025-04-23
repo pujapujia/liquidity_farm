@@ -342,12 +342,9 @@
         </div>
         <div class="nav-center">
             <a href="./index.html">LIQUIDITY FARM</a>
-            <a href="./dashboard.html">Dashboard</a>
         </div>
         <div class="nav-right">
-            <a href="./upload.html" id="loginLink">Login</a>
-            <span class="username" id="username"></span>
-            <a href="#" id="logoutLink" onclick="logoutAdmin()" style="display: none;">Logout</a>
+            <a href="#" id="usernameLink" class="username"></a>
         </div>
     </nav>
     <div class="content-wrapper">
@@ -455,15 +452,19 @@
                 localStorage.setItem('username', user.displayName || user.email.split('@')[0]);
                 document.getElementById('adminSection').style.display = 'block';
                 document.getElementById('loginSection').style.display = 'none';
+                const usernameLink = document.getElementById('usernameLink');
+                usernameLink.textContent = user.displayName || user.email.split('@')[0];
+                usernameLink.href = `./profile.html?uid=${encodeURIComponent(user.uid)}`;
                 loadProjects();
                 toggleFields();
-                updateAuthLinks();
             } else {
                 localStorage.removeItem('adminLoggedIn');
                 localStorage.removeItem('username');
                 document.getElementById('adminSection').style.display = 'none';
                 document.getElementById('loginSection').style.display = 'block';
-                updateAuthLinks();
+                const usernameLink = document.getElementById('usernameLink');
+                usernameLink.textContent = '';
+                usernameLink.href = './upload.html';
             }
         });
     
@@ -480,35 +481,6 @@
                 filterProjects();
                 closeAllSubMenus();
             }
-        }
-    
-        function updateAuthLinks() {
-            firebase.auth().onAuthStateChanged((user) => {
-                const isLoggedIn = !!user;
-                const username = user ? (user.displayName || user.email.split('@')[0]) : '';
-                localStorage.setItem('adminLoggedIn', isLoggedIn.toString());
-                localStorage.setItem('username', username);
-                document.getElementById('loginLink').style.display = isLoggedIn ? 'none' : 'inline';
-                document.getElementById('logoutLink').style.display = isLoggedIn ? 'inline' : 'none';
-                document.getElementById('loginSection').style.display = isLoggedIn ? 'none' : 'block';
-                document.getElementById('username').textContent = isLoggedIn ? username : '';
-                if (isLoggedIn) {
-                    loadProjects();
-                }
-            });
-        }
-    
-        function logoutAdmin() {
-            firebase.auth().signOut().then(() => {
-                localStorage.removeItem('adminLoggedIn');
-                localStorage.removeItem('username');
-                document.getElementById('adminSection').style.display = 'none';
-                document.getElementById('projectMenu').classList.remove('active');
-                updateAuthLinks();
-            }).catch((error) => {
-                console.error('Logout error:', error);
-                alert('Failed to logout!');
-            });
         }
     
         function loginAdmin() {
@@ -597,10 +569,6 @@
                     projectListItems.appendChild(li);
                 });
             }
-        }
-    
-        function displayProjectList() {
-            filterProjects();
         }
     
         function toggleFields() {
@@ -705,7 +673,7 @@
     
         function deleteProject(index, docId) {
             console.log('Deleting project at index:', index);
-            const isAdmin = currentUser && currentUser.email === 'admin@liquidityfarm.com';
+        const isAdmin = currentUser && currentUser.email === 'admin@liquidityfarm.com';
             const isUploader = currentUser && projects[index].uploaderUid === currentUser.uid;
             if (!isAdmin && !isUploader) {
                 alert('You do not have permission to delete this project!');
